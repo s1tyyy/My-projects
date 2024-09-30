@@ -1,0 +1,332 @@
+#Could you take a look at this code and point out the errors? I'm just practicing.
+
+import pygame
+import random
+import how
+import fruits_classe
+
+pygame.init()
+
+WIDTH = 600
+HEIGHT = 800
+FPS = 10
+
+REMOVE_CUTTING_EVENT = pygame.USEREVENT + 1
+REMOVE_CUTTING_BANANA_EVENT = pygame.USEREVENT + 1
+REMOVE_CUTTING_LEMON_EVENT = pygame.USEREVENT + 1
+REMOVE_CUTTING_WATERMELON_EVENT = pygame.USEREVENT + 1
+REMOVE_CUTTING_PINEAPPLE_EVENT = pygame.USEREVENT + 1
+
+
+def disable():
+    global state
+    main_menu.disable()
+    bg_music.play()
+    go.play()
+    state = "game"
+
+
+def create_new_apple(y):
+    x = random.randrange(50, 550)
+    return fruits_classe.Apple(x, y)
+
+
+def create_new_banana(y):
+    banana_x = random.randrange(50, 550)
+    return fruits_classe.Banana(banana_x, y)
+
+
+def create_new_lemon(y):
+    lemon_x = random.randrange(50, 550)
+    return fruits_classe.Lemon(lemon_x, y)
+
+
+def create_new_watermelon(y):
+    watermelon_x = random.randrange(50, 550)
+    return fruits_classe.Watermelon(watermelon_x, y)
+
+
+def create(msg, color, x, y, font, size):
+    font_style = pygame.font.SysFont(font, size)
+    text = font_style.render(msg, True, color)
+    screen.blit(text, [x, y])
+
+
+def lose():
+    global play, label_id, state, score
+    state = "menu"
+    try:
+        label = main_menu.get_widget(label_id)
+        label.set_title(f"Счёт: {score}")
+    except:
+        label = main_menu.add.label(f"Счёт: {score}")
+        label_id = label.get_id()
+        main_menu.move_widget_index(label, 0)
+    main_menu.set_title("ПРОИГРАЛ")
+    play.set_title('Играть заново')
+    katana_fall.play()
+    bg_music.stop()
+    main_menu.enable()
+    score = 0
+
+
+def difficultys():
+    global FPS
+    slider = difficulty.get_value()
+    if slider == 1:
+        FPS = 10
+    elif slider == 2:
+        FPS = 15
+    elif slider == 3:
+        FPS = 20
+    elif slider == 4:
+        FPS = 25
+    elif slider == 5:
+        FPS = 30
+
+
+run = True
+label_id = None
+state = "menu"
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Fruit ninja")
+clock = pygame.time.Clock()
+main_menu = how.Menu(screen)
+play = main_menu.add.button("Играть", disable)
+difficulty = main_menu.add.range_slider("Сложность", 1, (1, 2, 3, 4, 5))
+main_menu.add.button("Выход", quit)
+
+all_sprites = pygame.sprite.Group()
+apple_x1 = random.randrange(50, 550)
+banana_x1 = random.randrange(50, 550)
+lemon_x1 = random.randrange(50, 550)
+watermelon_x1 = random.randrange(50, 550)
+y1 = 20
+apple_step = 20
+banana_step = 23
+watermelon_step = 18
+lemon_step = 10
+pineapple_step = 21
+score = 0
+
+apple = fruits_classe.Apple(apple_x1, y1)
+banana = fruits_classe.Banana(banana_x1, y1)
+lemon = fruits_classe.Lemon(lemon_x1, y1)
+watermelon = fruits_classe.Watermelon(watermelon_x1, y1)
+
+all_sprites.add(banana)
+all_sprites.add(apple)
+all_sprites.add(lemon)
+all_sprites.add(watermelon)
+
+katana_music = pygame.mixer.Sound("music/swipe.mp3")
+katana_music.set_volume(0.3)
+udar_katana = pygame.mixer.Sound("music/udar.mp3")
+udar_katana.set_volume(0.3)
+bite_katana = pygame.mixer.Sound("music/bite.mp3")
+bite_katana.set_volume(0.3)
+katana_hit = pygame.mixer.Sound("music/lemon_sound.mp3")
+katana_hit.set_volume(0.3)
+bg_music = pygame.mixer.Sound("music/bg_music.mp3")
+bg_music.set_volume(0.2)
+go = pygame.mixer.Sound("music/katana_go.mp3")
+go.set_volume(0.5)
+katana_fall = pygame.mixer.Sound("music/drop_wooden_floor.mp3")
+katana_fall.set_volume(0.6)
+
+wall_img = pygame.image.load("wall.png")
+wall = pygame.transform.scale(wall_img, (WIDTH, HEIGHT))
+wall_rect = wall.get_rect()
+
+cutting = None
+cutting_banana = None
+cutting_lemon = None
+cutting_watermelon = None
+cutting_pineapple = None
+
+while run:
+    if state == "game":
+        apple.rect.y += apple_step
+        banana.rect.y += banana_step
+        lemon.rect.y += lemon_step
+        watermelon.rect.y += watermelon_step
+
+    sx, sy = apple.get_cord()
+    clock.tick(FPS)
+    events = pygame.event.get()
+    for event in events:
+        if event.type == pygame.QUIT:
+            run = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = event.pos
+            if apple.rect.collidepoint(mouse_pos):
+                apple.kill()
+                apple = create_new_apple(y1)
+                all_sprites.add(apple)
+                cutting = fruits_classe.Cut_apple(mouse_pos[0], mouse_pos[1])
+                all_sprites.add(cutting)
+                bite_katana.play()
+                score += 1
+                pygame.time.set_timer(REMOVE_CUTTING_EVENT, 200)
+            if banana.rect.collidepoint(mouse_pos):
+                banana.kill()
+                banana = create_new_banana(y1)
+                all_sprites.add(banana)
+                cutting_banana = fruits_classe.Cut_banana(mouse_pos[0], mouse_pos[1])
+                banana1 = random.random()
+                all_sprites.add(cutting_banana)
+                katana_music.play()
+                score += 1
+                pygame.time.set_timer(REMOVE_CUTTING_BANANA_EVENT, 200)
+            if lemon.rect.collidepoint(mouse_pos):
+                lemon.kill()
+                lemon = create_new_lemon(y1)
+                all_sprites.add(lemon)
+                cutting_lemon = fruits_classe.Cut_lemon(mouse_pos[0], mouse_pos[1])
+                all_sprites.add(cutting_lemon)
+                katana_hit.play()
+                score += 1
+                pygame.time.set_timer(REMOVE_CUTTING_LEMON_EVENT, 200)
+            if watermelon.rect.collidepoint(mouse_pos):
+                watermelon.kill()
+                watermelon = create_new_watermelon(y1)
+                all_sprites.add(watermelon)
+                cutting_watermelon = fruits_classe.Cut_watermelon(mouse_pos[0], mouse_pos[1])
+                all_sprites.add(cutting_watermelon)
+                udar_katana.play()
+                score += 1
+                pygame.time.set_timer(REMOVE_CUTTING_WATERMELON_EVENT, 200)
+        if event.type == REMOVE_CUTTING_EVENT:
+            if cutting:
+                cutting.kill()
+                cutting = None
+            pygame.time.set_timer(REMOVE_CUTTING_EVENT, 0)
+        if event.type == REMOVE_CUTTING_BANANA_EVENT:
+            if cutting_banana:
+                cutting_banana.kill()
+                cutting_banana = None
+            pygame.time.set_timer(REMOVE_CUTTING_BANANA_EVENT, 0)
+        if event.type == REMOVE_CUTTING_LEMON_EVENT:
+            if cutting_lemon:
+                cutting_lemon.kill()
+                cutting_lemon = None
+            pygame.time.set_timer(REMOVE_CUTTING_LEMON_EVENT, 0)
+        if event.type == REMOVE_CUTTING_WATERMELON_EVENT:
+            if cutting_watermelon:
+                cutting_watermelon.kill()
+                cutting_watermelon = None
+            pygame.time.set_timer(REMOVE_CUTTING_WATERMELON_EVENT, 0)
+
+    screen.blit(wall_img, wall_rect)
+    all_sprites.draw(screen)
+    create(f"Cчёт: {score}", "white", 0, 0, "Comic Sans", 25)
+    difficultys()
+
+    if apple.rect.y > HEIGHT or banana.rect.y > HEIGHT or lemon.rect.y > HEIGHT or watermelon.rect.y > HEIGHT:
+        y1 = 20
+        apple.kill()
+        banana.kill()
+        lemon.kill()
+        watermelon.kill()
+        apple = create_new_apple(y1)
+        banana = create_new_banana(y1)
+        lemon = create_new_lemon(y1)
+        watermelon = create_new_watermelon(y1)
+        all_sprites.add(apple)
+        all_sprites.add(banana)
+        all_sprites.add(lemon)
+        all_sprites.add(watermelon)
+        score -= 15
+
+    if score <= -50:
+        lose()
+
+    main_menu.flip2(events)
+    pygame.display.flip()
+
+pygame.quit()
+
+
+
+
+
+#next comes the fruit_classe file
+
+
+import pygame
+
+pygame.init()
+
+
+class Apple(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("YAbloko.png")
+        self.image = pygame.transform.scale(self.image, (50, 50))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+    def get_cord(self):
+        return self.rect.topleft
+
+class Cut_apple(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("app.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+class Banana(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("banan.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+class Cut_banana(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("cut_banan.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+class Lemon(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("lemon.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+class Cut_lemon(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("cut_lemon.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+class Watermelon(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("watermelon.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+class Cut_watermelon(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("cut_watrermelon.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+class Pineapple(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("pineapple.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+class Cut_pineapple(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super().__init__()
+        self.image = pygame.image.load("cut_pineapple.png")
+        self.image = pygame.transform.scale(self.image, (70, 70))
+        self.rect = self.image.get_rect(topleft=(x, y))
